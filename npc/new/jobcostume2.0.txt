@@ -1,0 +1,981 @@
+// -----------------------------------------------------------
+//---->> ver 1.4 modifed for 4th job bodystyle
+//---->> ver 1.5 fixed dragon mount
+//---->> ver 1.6 added hyper novices
+//---->> ver 1.7 fixed soul linker to soul ascetic / Star gladiator to sky emperor garment wings whenmount
+//---->> ver 1.8 removed super novice expansion change
+//---->> ver 1.9 fixed bodycolor for JRO and 4th does not reset on logout
+// -----------------------------------------------------------
+
+prontera,170,226,4	script	Job Costumes	470,{
+
+function Require_Level;
+function RestrictClass;
+function isExpandedClass;
+function HasjROCostume;
+function Has4thJobCostume;
+function ChangeAppr;
+function Ninja_Gunslinger;
+function ExpandedUnlockCostume;
+function UnlockCostume;
+function OriginalCostume;
+function JobNameColors;
+function 4thJobNames;
+function ExpandedjROJobNames;
+
+function	Require_Level	{
+	if (isExpandedClass()){ 
+		if (BaseLevel < getarg(0) || JobLevel < .Req_JobLevel_Expanded) {
+			.@blvl = getarg(0) - BaseLevel;
+			.@jlvl = .Req_JobLevel_Expanded - JobLevel;
+			mes "Level requirement:";
+			mes ((getarg(0)>1)? 
+				"^bb0000"+getarg(0)+"^000000 (^bb0000Base^000000) / ":"")+"^00bb00"+
+				.Req_JobLevel_Expanded+"^000000 (^00bb00Job^000000)";
+			mes "You need " +
+				((.@blvl > 0) ? "^bb0000"+.@blvl+"^000000 more base levels " + 
+					((.@jlvl > 0) ? "and " : "") : "") +
+				((.@jlvl > 0) ? "^00bb00"+.@jlvl+"^000000 more job levels " : "") +
+				"to continue.";
+			close;
+		}
+	} else if (BaseLevel < getarg(0) || JobLevel < getarg(1)) {
+		.@blvl = getarg(0) - BaseLevel;
+		.@jlvl = getarg(1) - JobLevel;
+		mes "Level requirement:";
+		mes ((getarg(0)>1)? 
+			"^bb0000"+getarg(0)+"^000000 (^bb0000Base^000000) / ":"")+"^00bb00"+
+			getarg(1)+"^000000 (^00bb00Job^000000)";
+		mes "You need " +
+			((.@blvl > 0) ? "^bb0000"+.@blvl+"^000000 more base levels " + 
+				((.@jlvl > 0) ? "and " : "") : "") +
+			((.@jlvl > 0) ? "^00bb00"+.@jlvl+"^000000 more job levels " : "") +
+			"to continue.";
+		close;
+	}
+	return;
+}
+
+
+function RestrictClass {
+	.@eaj = eaclass();
+	if(.@eaj&EAJ_BASEMASK == EAJ_NOVICE) return 0;		// Check if Novice
+	if (isExpandedClass()) return isExpandedClass();	// Check if Expanded Class 
+	if(.@eaj&EAJL_2 && roclass(.@eaj|EAJL_UPPER) != -1){	// 1st Job Restriction
+		return 1;
+	}
+	return 0;
+}
+
+function Ninja_Gunslinger{
+	switch (Class){
+		case 24:	// Gunslinger
+		case 25:	// Ninja
+		case 4211:	// Kagerou
+		case 4212:	// Oboro
+		case 4215:	// Rebellion
+			return 1;
+		default:
+			return 0;
+	}
+}
+
+function isExpandedClass{
+	switch (Class){
+		case 23:	// Super Novice
+		case 24:	// Gunslinger
+		case 25:	// Ninja
+		case 4046:	// Taekwon
+		case 4047:	// Star Gladiator
+		case 4049:	// Soul Linker
+		case 4190:	// Expanded Super Novice
+		case 4211:	// Kagerou
+		case 4212:	// Oboro
+		case 4215:	// Rebellion
+		case 4239:	// Star Emperor
+		case 4240:	// Soul Reaper
+			return 1;
+		default:
+			return 0;
+	}
+}
+
+function HasjROCostume {
+	return 1;
+	//return !(isExpandedClass());
+}
+
+function Has4thJobCostume {
+	if (eaclass()|EAJL_THIRD)
+		return 1;
+	else
+		return 0;
+}
+
+function ChangeAppr {
+	switch(getarg(1)){
+		case 0: // Normal Mode
+			if(.reset_cloth_color)
+				setlook LOOK_CLOTHES_COLOR,0;
+			setlook LOOK_BODY2,0;
+			changebase getarg(0);
+			set baselook, getarg(0);
+			changebody = 0;
+			if (Class == 4008 && checkriding())				// Peco to Dragon
+				setoption Option_Dragon1;
+			else if((Class == 4054 || Class == 4060) && checkdragon())	// Dragon to Peco
+				setoption Option_Riding;
+			break;
+		case 1: // jRO Mode
+			if(!HasjROCostume()) return;
+			if (getarg(0) == 0){
+				OriginalCostume();
+			}else{
+				changebase roclass(eaclass()|EAJL_THIRD);
+				if(.reset_cloth_color)
+					setlook LOOK_CLOTHES_COLOR,0;
+				setlook LOOK_BODY2,getarg(0);
+			}
+			baselook = 0;
+			changebody = getarg(0);
+			break;
+		case 2: // baby jRO Mode
+			if(!HasjROCostume()) return;
+			setlook LOOK_BODY2,0;
+			changebase getarg(0);
+			set baselook, getarg(0);
+			if(.reset_cloth_color)
+				setlook LOOK_CLOTHES_COLOR,0;
+			setlook LOOK_BODY2,1;
+			changebody = 1;
+			break;
+		case 3: // jRO Mode Expanded
+			if(!HasjROCostume()) return;
+			setlook LOOK_BODY2,0;
+			changebase getarg(0);
+			set baselook, getarg(0);
+			if(.reset_cloth_color)
+				setlook LOOK_CLOTHES_COLOR,0;
+			//atcommand "@bodystyle 1";
+			if(class == Job_Soul_Linker) changebase 4240;
+			if(class == Job_Star_Gladiator)  changebase 4239;
+			setlook LOOK_BODY2,1;
+			changebody = 1;
+			break;
+		case 4: // baby jRO Mode Expanded
+			if(!HasjROCostume()) return;
+			if(.reset_cloth_color)
+				setlook LOOK_CLOTHES_COLOR,0;
+			changebase getarg(0);
+			setlook LOOK_BODY2,1;
+			//atcommand "@bodystyle 1";
+			if(class == Job_Soul_Linker)  changebase 4242;
+			if(class == Job_Star_Gladiator)  changebase 4241;
+			set baselook, getarg(0);
+			changebody = 1;
+			break;
+		case 5: // baby Trans Mode
+			if(!HasjROCostume()) return;
+			setlook LOOK_BODY2,1;
+			changebase getarg(0);
+			set baselook, getarg(0);
+			if(.reset_cloth_color)
+				setlook LOOK_CLOTHES_COLOR,0;
+			setlook LOOK_BODY2,1;
+			changebody = 1;
+			break;
+		case 6: // baby 4th Mode
+			if(!HasjROCostume()) return;
+			setlook LOOK_BODY2,0;
+			changebase getarg(0);
+			set baselook, getarg(0);
+			if(.reset_cloth_color)
+				setlook LOOK_CLOTHES_COLOR,0;
+			setlook LOOK_BODY2,4;
+			changebody = 4;
+			break;
+	}
+	mes "Here you go!";
+	close;
+}
+
+function ExpandedUnlockCostume {
+	mes " ";
+	switch(getarg(0)){
+		case 1:
+			if(Jobis_1stExpanded) return;
+			mes "This is a Common Suit and unlocking it requires: ^ff0000"+getitemname(.Job_1stExpanded_req[0])+"^000000 x "+.Job_1stExpanded_req[1];
+			if (countitem(.Job_1stExpanded_req[0]) < .Job_1stExpanded_req[1]){
+				mes "Unfortunately, you dont have the required items.";
+				close;
+			}
+			mes " ", "Unlock and change?";
+			if(select("Unlock:Stop")==2)end;
+			delitem .Job_1stExpanded_req[0],.Job_1stExpanded_req[1];
+			set Jobis_1stExpanded,1;
+			break;
+		case 2:
+			if(Jobis_1stExpandedBaby) return;
+			mes "This is a Common Suit and unlocking it requires: ^ff0000"+getitemname(.Job_1stExpandedBaby_req[0])+"^000000 x "+.Job_1stExpandedBaby_req[1];
+			if (countitem(.Job_1stExpandedBaby_req[0]) < .Job_1stExpandedBaby_req[1]){
+				mes "Unfortunately, you dont have the required items.";
+				close;
+			}
+			mes " ", "Unlock and change?";
+			if(select("Unlock:Stop")==2)end;
+			delitem .Job_1stExpandedBaby_req[0],.Job_1stExpandedBaby_req[1];
+			set Jobis_1stExpandedBaby,1;
+			break;
+		case 3:
+			if(Jobis_2ndExpanded) return;
+			mes "This is a Common Suit and unlocking it requires: ^ff0000"+getitemname(.Job_2ndExpanded_req[0])+"^000000 x "+.Job_2ndExpanded_req[1];
+			if (countitem(.Job_2ndExpanded_req[0]) < .Job_2ndExpanded_req[1]){
+				mes "Unfortunately, you dont have the required items.";
+				close;
+			}
+			mes " ", "Unlock and change?";
+			if(select("Unlock:Stop")==2)end;
+			delitem .Job_2ndExpanded_req[0],.Job_2ndExpanded_req[1];
+			set Jobis_2ndExpanded,1;
+			break;
+		case 4:
+			if(Jobis_2ndExpandedBaby) return;
+			mes "This is a Common Suit and unlocking it requires: ^ff0000"+getitemname(.Job_2ndExpandedBaby_req[0])+"^000000 x "+.Job_2ndExpandedBaby_req[1];
+			if (countitem(.Job_2ndExpandedBaby_req[0]) < .Job_2ndExpandedBaby_req[1]){
+				mes "Unfortunately, you dont have the required items.";
+				close;
+			}
+			mes " ", "Unlock and change?";
+			if(select("Unlock:Stop")==2)end;
+			delitem .Job_2ndExpandedBaby_req[0],.Job_2ndExpandedBaby_req[1];
+			set Jobis_2ndExpandedBaby,1;
+			break;
+		case 5:
+			if(Jobis_jRO_Expanded) return;
+			mes "This is a Common Suit and unlocking it requires: ^ff0000"+getitemname(.Job_jRO_Expanded_req[0])+"^000000 x "+.Job_jRO_Expanded_req[1];
+			if (countitem(.Job_jRO_Expanded_req[0]) < .Job_jRO_Expanded_req[1]){
+				mes "Unfortunately, you dont have the required items.";
+				close;
+			}
+			mes " ", "Unlock and change?";
+			if(select("Unlock:Stop")==2)end;
+			delitem .Job_jRO_Expanded_req[0],.Job_jRO_Expanded_req[1];
+			set Jobis_jRO_Expanded,1;
+			break;
+		case 6:
+			if(Jobis_jROBaby_Expanded) return;
+			mes "This is a Common Suit and unlocking it requires: ^ff0000"+getitemname(.Job_jROBaby_Expanded_req[0])+"^000000 x "+.Job_jROBaby_Expanded_req[1];
+			if (countitem(.Job_jROBaby_Expanded_req[0]) < .Job_jROBaby_Expanded_req[1]){
+				mes "Unfortunately, you dont have the required items.";
+				close;
+			}
+			mes " ", "Unlock and change?";
+			if(select("Unlock:Stop")==2)end;
+			delitem .Job_jROBaby_Expanded_req[0],.Job_jROBaby_Expanded_req[1];
+			set Jobis_jROBaby_Expanded,1;
+			break;
+	}
+	return;
+}
+
+function UnlockCostume {
+	mes " ";
+	switch(getarg(0)){
+		case 1:
+			if(Jobis_2nd) return;
+			mes "This is a Common Suit and unlocking it requires: ^ff0000"+getitemname(.Job_2nd_req[0])+"^000000 x "+.Job_2nd_req[1];
+			if (countitem(.Job_2nd_req[0]) < .Job_2nd_req[1]){
+				mes "Unfortunately, you dont have the required items.";
+				close;
+			}
+			mes " ", "Unlock and change?";
+			if(select("Unlock:Stop")==2)end;
+			delitem .Job_2nd_req[0],.Job_2nd_req[1];
+			set Jobis_2nd,1;
+			break;
+		case 2:
+			if(Jobis_2ndBaby) return;
+			mes "This is a Common Suit and unlocking it requires: ^ff0000"+getitemname(.Job_2ndBaby_req[0])+"^000000 x "+.Job_2ndBaby_req[1];
+			if (countitem(.Job_2ndBaby_req[0]) < .Job_2ndBaby_req[1]){
+				mes "Unfortunately, you dont have the required items.";
+				close;
+			}
+			mes " ", "Unlock and change?";
+			if(select("Unlock:Stop")==2)end;
+			delitem .Job_2ndBaby_req[0],.Job_2ndBaby_req[1];
+			set Jobis_2ndBaby,1;
+			break;
+
+		case 3:
+			if(Jobis_2ndTrans) return;
+			mes "This is a Common Suit and unlocking it requires: ^ff0000"+getitemname(.Job_2ndTrans_req[0])+"^000000 x "+.Job_2ndTrans_req[1];
+			if (countitem(.Job_2ndTrans_req[0]) < .Job_2ndTrans_req[1]){
+				mes "Unfortunately, you dont have the required items.";
+				close;
+			}
+			mes " ", "Unlock and change?";
+			if(select("Unlock:Stop")==2)end;
+			delitem .Job_2ndTrans_req[0],.Job_2ndTrans_req[1];
+			set Jobis_2ndTrans,1;
+			break;
+
+		case 5:
+			if(Jobis_3rd) return;
+			mes "This is a Common Suit and unlocking it requires: ^ff0000"+getitemname(.Job_3rd_req[0])+"^000000 x "+.Job_3rd_req[1];
+			if (countitem(.Job_3rd_req[0]) < .Job_3rd_req[1]){
+				mes "Unfortunately, you dont have the required items.";
+				close;
+			}
+			mes " ", "Unlock and change?";
+			if(select("Unlock:Stop")==2)end;
+			delitem .Job_3rd_req[0],.Job_3rd_req[1];
+			set Jobis_3rd,1;
+
+			break;
+		case 6:
+			if(Jobis_3rdBaby) return;
+			mes "This is a Common Suit and unlocking it requires: ^ff0000"+getitemname(.Job_3rdBaby_req[0])+"^000000 x "+.Job_3rdBaby_req[1];
+			if (countitem(.Job_3rdBaby_req[0]) < .Job_3rdBaby_req[1]){
+				mes "Unfortunately, you dont have the required items.";
+				close;
+			}
+			mes " ", "Unlock and change?";
+			if(select("Unlock:Stop")==2)end;
+			delitem .Job_3rdBaby_req[0],.Job_3rdBaby_req[1];
+			set Jobis_3rdBaby,1;
+			break;
+		case 7:
+			if(Jobis_jRO) return;
+			mes "This is a Common Suit and unlocking it requires: ^ff0000"+getitemname(.Job_jRO_req[0])+"^000000 x "+.Job_jRO_req[1];
+			if (countitem(.Job_jRO_req[0]) < .Job_jRO_req[1]){
+				mes "Unfortunately, you dont have the required items.";
+				close;
+			}
+			mes " ", "Unlock and change?";
+			if(select("Unlock:Stop")==2)end;
+			delitem .Job_jRO_req[0],.Job_jRO_req[1];
+			set Jobis_jRO,1;
+			break;
+		case 8:
+			if(Jobis_jROBaby) return;
+			mes "This is a Common Suit and unlocking it requires: ^ff0000"+getitemname(.Job_jROBaby_req[0])+"^000000 x "+.Job_jROBaby_req[1];
+			if (countitem(.Job_jROBaby_req[0]) < .Job_jROBaby_req[1]){
+				mes "Unfortunately, you dont have the required items.";
+				close;
+			}
+			mes " ", "Unlock and change?";
+			if(select("Unlock:Stop")==2)end;
+			delitem .Job_jROBaby_req[0],.Job_jROBaby_req[1];
+			set Jobis_jROBaby,1;
+			break;
+		case 9:
+			if(Jobis_4th) return;
+			mes "This is a Common Suit and unlocking it requires: ^ff0000"+getitemname(.Job_4th_req[0])+"^000000 x "+.Job_4th_req[1];
+			if (countitem(.Job_4th_req[0]) < .Job_4th_req[1]){
+				mes "Unfortunately, you dont have the required items.";
+				close;
+			}
+			mes " ", "Unlock and change?";
+			if(select("Unlock:Stop")==2)end;
+			delitem .Job_4th_req[0],.Job_4th_req[1];
+			set Jobis_4th,1;
+			break;
+		case 10:
+			if(Jobis_4thBaby) return;
+			mes "This is a Common Suit and unlocking it requires: ^ff0000"+getitemname(.Job_4thBaby_req[0])+"^000000 x "+.Job_4thBaby_req[1];
+			if (countitem(.Job_4thBaby_req[0]) < .Job_4thBaby_req[1]){
+				mes "Unfortunately, you dont have the required items.";
+				close;
+			}
+			mes " ", "Unlock and change?";
+			if(select("Unlock:Stop")==2)end;
+			delitem .Job_4thBaby_req[0],.Job_4thBaby_req[1];
+			set Jobis_4thBaby,1;
+			break;
+	}
+	return;
+}
+
+function OriginalCostume {
+	baselook = 0;
+	changebody = 0;
+	if(.reset_cloth_color)
+		setlook LOOK_CLOTHES_COLOR,0;
+	setlook LOOK_BODY2,0;
+	changebase Class;
+	return;
+}
+
+function JobNameColors{
+	if (getarg(1) == 1){	// Expanded Class
+		switch (getarg(0)){
+			case 0:
+				set .@fontcolor$, .1stExpandedColor$;
+				break;
+			case 1:
+				set .@fontcolor$, .1stExpandedBabyColor$;
+				break;
+			case 2:
+				set .@fontcolor$, .2ndExpandedColor$;
+				break;
+			case 3:
+				set .@fontcolor$, .2ndExpandedBabyColor$;
+				break;
+		}
+	}else if (getarg(1) == 2){
+		switch (getarg(0)){
+			case 0:
+				set .@fontcolor$, .2ndColor$;
+				break;
+			case 1:
+				set .@fontcolor$, .2ndBabyColor$;
+				break;
+			case 2:
+				set .@fontcolor$, .2ndTransColor$;
+				break;
+			case 3:
+				set .@fontcolor$, .2ndTransBabyColor$;
+				break;
+			case 4:
+				set .@fontcolor$, .3rdColor$;
+				break;
+			case 5:
+				set .@fontcolor$, .3rdBabyColor$;
+				break;
+		}
+	}else{
+		set .@fontcolor$, "^000000";
+	}
+	return .@fontcolor$;
+}
+function 4thJobNames {
+	switch (getarg(0)){
+		case 7:		// Knight
+			set .@4thJobName$,"Dragon Knight";
+			break;
+		case 8:		// Priest
+			set .@4thJobName$,"Cardinal";
+			break;
+		case 9:		// Wizard
+			set .@4thJobName$,"Arch Mage";
+			break;
+		case 10:	// Blacksmith
+			set .@4thJobName$,"Meister";
+			break;
+		case 11:	// Hunter
+			set .@4thJobName$,"Wind Hawk";
+			break;
+		case 12:	// Assassin
+			set .@4thJobName$,"Shadow Cross";
+			break;
+		case 14:	// Crusader
+			set .@4thJobName$,"Imperial Guard";
+			break;
+		case 15:	// Monk
+			set .@4thJobName$,"Inquisitor";
+			break;
+		case 16:	// Sage
+			set .@4thJobName$,"Elemental Master";
+			break;
+		case 17:	// Rogue
+			set .@4thJobName$,"Abyss Chaser";
+			break;
+		case 18:	// Alchemist
+			set .@4thJobName$,"Biolo";
+			break;
+		case 19:	// Bard
+			set .@4thJobName$,"Troubador";
+			break;
+		case 20:	// Dancer
+			set .@4thJobName$,"Trouvere";
+			break;
+	}
+	return .@4thJobName$;
+}
+
+function ExpandedjROJobNames {
+	switch (getarg(0)){
+		case 4047:	// Star Gladiator
+			set .@ExpandedjROJobName$,"Sky Emperor";
+			break;
+		case 24:	// Gunslinger
+		case 4215:
+			set .@ExpandedjROJobName$,"Night Watch";
+			break;
+		case 25:	// Ninja
+		case 4211:
+		case 4212:
+			if (sex)
+				set .@ExpandedjROJobName$,"Shinkiro";
+			else
+				set .@ExpandedjROJobName$,"Shiranui";
+			break;
+		case 4049:	// Soul Linker
+			set .@ExpandedjROJobName$,"Soul Ascetic";
+			break;
+		case 23:	// Super Novice
+			set .@ExpandedjROJobName$,"Hyper Novice";
+			break;
+	}
+	return .@ExpandedjROJobName$;
+}
+
+	.@TYPE_CHANGEBASE = 0;
+	.@TYPE_SETLOOK = 1;
+	.@TYPE_SETLOOK_BABY = 2;
+	.@TYPE_SETLOOK_EXPANDED = 3;
+	.@TYPE_SETLOOK_BABY_EXPANDED = 4;
+	.@TYPE_SETLOOK_BABY_TRANS = 5;
+	.@TYPE_SETLOOK_BABY_4TH = 6;
+
+	mes .n$;
+	
+	if(!RestrictClass()){
+		mes "Your class isn't allowed to use this NPC.";
+		close;
+	}
+	Require_Level(.Req_BaseLevel, .Req_JobLevel);
+	mes "Greetings, adventurer!";
+	switch(select(" > Change Job Costume: > About Job Costumes")){
+		case 1:
+			next;
+			break;
+		case 2:
+			next;
+			mes .n$;
+			if (.Job_4th_switch)
+				mes "Change your sprite into your 2nd job, 3rd job, 4th job, jRO, or Baby Sprite.";
+			else
+				mes "Change your sprite into your 2nd job, 3rd job, jRO, or Baby Sprite.";
+			close;
+	}
+	mes .n$;
+	mes "Please select a Suit";
+	setarray .@costume_locktext$[0],"";
+if(Ninja_Gunslinger()){
+	setarray .@costume_unlock,Jobis_1stExpanded,Jobis_1stExpandedBaby,Jobis_2ndExpanded,Jobis_2ndExpandedBaby,Jobis_jRO_Expanded,Jobis_jROBaby_Expanded,1;
+	if (Class == 4211 || Class == 4212){	// Kagerou / Oboro
+		setarray .@menuselect$,	eaclass()&EAJ_NINJA,eaclass()&EAJ_NINJA|EAJ_BABY,
+				eaclass()|EAJL_2_1,eaclass()|EAJL_2_1|EAJ_BABY;
+	}else if (Class == 4215){		// Rebellion
+		setarray .@menuselect$,	eaclass()&EAJ_GUNSLINGER,eaclass()&EAJ_GUNSLINGER|EAJ_BABY,
+				eaclass()|EAJL_2_1,eaclass()|EAJL_2_1|EAJ_BABY;
+	}else{
+		setarray .@menuselect$,	eaclass()&EAJ_UPPERMASK,eaclass()&EAJ_UPPERMASK|EAJ_BABY,
+				eaclass()|EAJL_2_1,eaclass()|EAJL_2_1|EAJ_BABY;
+	}
+	for (.@i = 0; .@i < getarraysize(.@costume_unlock); .@i++){
+		if (!(.payment_switch)){
+			set.@costume_locktext$[.@i],"^000000 > ";
+		}else{
+			if(.@costume_unlock[.@i]){set.@costume_locktext$[.@i],"^000000 > ";}
+			else{set.@costume_locktext$[.@i],"^000000 > [^ff0000LOCKED^000000] ";}
+		}
+	}
+	for (.@i = 0; .@i < getarraysize(.@menuselect$); .@i++){
+		if (Class == roclass(atoi(.@menuselect$[.@i]))){
+			set .@menulist$[.@i],"^000000 > "+JobNameColors(.@i,1)+jobname(roclass(atoi(.@menuselect$[.@i])));
+		}else{
+			set .@menulist$[.@i],.@costume_locktext$[.@i]+JobNameColors(.@i,1)+jobname(roclass(atoi(.@menuselect$[.@i])));
+		}
+	}
+	set .@menulist$[4],HasjROCostume() ? .@costume_locktext$[4]+.ExpandedjROColor$+ExpandedjROJobNames(roclass(eaclass()&EAJ_UPPERMASK)) : "";
+	set .@menulist$[5],HasjROCostume() ? .@costume_locktext$[5]+.ExpandedjROColor$+"Baby "+ExpandedjROJobNames(roclass(eaclass()&EAJ_UPPERMASK)) : "";
+	set .@menulist$[6], .@costume_locktext$[6]+.RevertJobColor$+"Revert back to original^000000";
+	for (.@i = 0; .@i < getarraysize(.@menulist$); .@i++)
+		.@menu$ = .@menu$ + .@menulist$[.@i] + ":";
+	.@i = select(.@menu$);
+	switch(.@i) {
+			case 1:
+				if (Class != roclass(atoi(.@menuselect$[.@i-1])) && .payment_switch)
+					ExpandedUnlockCostume(.@i);
+				ChangeAppr(roclass(atoi(.@menuselect$[.@i-1])),.@TYPE_CHANGEBASE);
+				break;
+			case 2:
+				if (Class != roclass(atoi(.@menuselect$[.@i-1])) && .payment_switch)
+					ExpandedUnlockCostume(.@i);
+				ChangeAppr(roclass(atoi(.@menuselect$[.@i-1])),.@TYPE_CHANGEBASE);
+				break;
+			case 3:
+				if (Class != roclass(atoi(.@menuselect$[.@i-1])) && .payment_switch)
+					ExpandedUnlockCostume(.@i);
+				ChangeAppr(roclass(eaclass()|EAJL_2_1),.@TYPE_CHANGEBASE);
+				break;
+			case 4:
+				if (Class != roclass(atoi(.@menuselect$[.@i-1])) && .payment_switch)
+					ExpandedUnlockCostume(.@i);
+				ChangeAppr(roclass(eaclass()|EAJL_2_1|EAJ_BABY),.@TYPE_CHANGEBASE);
+				break;
+			case 5:
+				if (.payment_switch)
+					ExpandedUnlockCostume(.@i);
+				ChangeAppr(Class,.@TYPE_SETLOOK_EXPANDED);
+				break;
+			case 6:
+				if (.payment_switch)
+					ExpandedUnlockCostume(.@i);
+				ChangeAppr(roclass(atoi(.@menuselect$[1])),.@TYPE_SETLOOK_BABY_EXPANDED);
+				break;
+			case 7:
+				ChangeAppr(0,.@TYPE_SETLOOK);
+				break;
+
+	}
+}else if (isExpandedClass()){
+ if (Class == 23 || Class == 4045){ // Super Novice is same Sprite with Expanded Super Novice, removing 2 options
+	setarray .@costume_unlock,Jobis_1stExpanded,Jobis_1stExpandedBaby,Jobis_jRO_Expanded,Jobis_jROBaby_Expanded,1;
+	setarray .@menuselect$,eaclass()&EAJ_UPPERMASK,eaclass()&EAJ_UPPERMASK|EAJ_BABY;
+
+	for (.@i = 0; .@i < getarraysize(.@costume_unlock); .@i++){
+		if (!(.payment_switch)){
+			set.@costume_locktext$[.@i],"^000000 > ";
+		}else{
+			if(.@costume_unlock[.@i]){set.@costume_locktext$[.@i],"^000000 > ";}
+			else{set.@costume_locktext$[.@i],"^000000 > [^ff0000LOCKED^000000] ";}
+		}
+	}
+	for (.@i = 0; .@i < getarraysize(.@menuselect$); .@i++){
+		if (Class == roclass(atoi(.@menuselect$[.@i]))){
+			set .@menulist$[.@i],"^000000 > "+JobNameColors(.@i,1)+jobname(roclass(atoi(.@menuselect$[.@i])));
+		}else{
+			set .@menulist$[.@i],.@costume_locktext$[.@i]+JobNameColors(.@i,1)+jobname(roclass(atoi(.@menuselect$[.@i])));
+		}
+	}
+	set .@menulist$[2],HasjROCostume() ? .@costume_locktext$[2]+.ExpandedjROColor$+ExpandedjROJobNames(roclass(eaclass()&EAJ_UPPERMASK)) : "";
+	set .@menulist$[3],HasjROCostume() ? .@costume_locktext$[3]+.ExpandedjROBabyColor$+"Baby "+ExpandedjROJobNames(roclass(eaclass()&EAJ_UPPERMASK)) : "";
+	set .@menulist$[4], .@costume_locktext$[4]+.RevertJobColor$+"Revert back to original^000000";
+	for (.@i = 0; .@i < getarraysize(.@menulist$); .@i++)
+		.@menu$ = .@menu$ + .@menulist$[.@i] + ":";
+	.@i = select(.@menu$);
+	switch(.@i) {
+			case 1:
+				if (Class != roclass(atoi(.@menuselect$[.@i-1])) && .payment_switch)
+					ExpandedUnlockCostume(.@i);
+				ChangeAppr(roclass(eaclass()&EAJ_UPPERMASK),.@TYPE_CHANGEBASE);
+				break;
+			case 2:
+				if (Class != roclass(atoi(.@menuselect$[.@i-1])) && .payment_switch)
+					ExpandedUnlockCostume(.@i);
+				ChangeAppr(roclass(eaclass()&EAJ_UPPERMASK|EAJ_BABY),.@TYPE_CHANGEBASE);
+				break;
+			case 3:
+				if (.payment_switch)
+					ExpandedUnlockCostume(5);
+				ChangeAppr(Class,.@TYPE_SETLOOK_EXPANDED);
+				break;
+			case 4:
+				if (.payment_switch)
+					ExpandedUnlockCostume(6);
+				ChangeAppr(roclass(eaclass()&EAJ_UPPERMASK|EAJ_BABY),.@TYPE_SETLOOK_BABY_EXPANDED);
+				break;
+			case 5:
+				ChangeAppr(0,.@TYPE_SETLOOK);
+				break;
+
+	}
+ }else if(Class == 4190 || Class == 4191){ // Expanded Super Novice is same Sprite with Super Novice, removing 2 options
+	setarray .@costume_unlock,Jobis_2ndExpanded,Jobis_2ndExpandedBaby,Jobis_jRO_Expanded,Jobis_jROBaby_Expanded,1;
+	setarray .@menuselect$,eaclass()|EAJL_THIRD,eaclass()|EAJL_THIRD|EAJ_BABY;
+
+	for (.@i = 0; .@i < getarraysize(.@costume_unlock); .@i++){
+		if (!(.payment_switch)){
+			set.@costume_locktext$[.@i],"^000000 > ";
+		}else{
+			if(.@costume_unlock[.@i]){set.@costume_locktext$[.@i],"^000000 > ";}
+			else{set.@costume_locktext$[.@i],"^000000 > [^ff0000LOCKED^000000] ";}
+		}
+	}
+	for (.@i = 0; .@i < getarraysize(.@menuselect$); .@i++){
+		if (Class == roclass(atoi(.@menuselect$[.@i]))){
+			set .@menulist$[.@i],"^000000 > "+JobNameColors(.@i,1)+jobname(roclass(atoi(.@menuselect$[.@i])));
+		}else{
+			set .@menulist$[.@i],.@costume_locktext$[.@i]+JobNameColors(.@i,1)+jobname(roclass(atoi(.@menuselect$[.@i])));
+		}
+	}
+	set .@menulist$[2],HasjROCostume() ? .@costume_locktext$[2]+.ExpandedjROColor$+ExpandedjROJobNames(roclass(eaclass()&EAJ_UPPERMASK)) : "";
+	set .@menulist$[3],HasjROCostume() ? .@costume_locktext$[3]+.ExpandedjROBabyColor$+"Baby "+ExpandedjROJobNames(roclass(eaclass()&EAJ_UPPERMASK)) : "";
+	set .@menulist$[4], .@costume_locktext$[4]+.RevertJobColor$+"Revert back to original^000000";
+	for (.@i = 0; .@i < getarraysize(.@menulist$); .@i++)
+		.@menu$ = .@menu$ + .@menulist$[.@i] + ":";
+	.@i = select(.@menu$);
+	switch(.@i) {
+			case 1:
+				if (Class != roclass(atoi(.@menuselect$[.@i-1])) && .payment_switch)
+					ExpandedUnlockCostume(3);
+				ChangeAppr(roclass(eaclass()|EAJL_THIRD),.@TYPE_CHANGEBASE);
+				break;
+			case 2:
+				if (Class != roclass(atoi(.@menuselect$[.@i-1])) && .payment_switch)
+					ExpandedUnlockCostume(4);
+				ChangeAppr(roclass(eaclass()|EAJL_THIRD|EAJ_BABY),.@TYPE_CHANGEBASE);
+				break;
+			case 3:
+				if (.payment_switch)
+					ExpandedUnlockCostume(5);
+				ChangeAppr(Class,.@TYPE_SETLOOK_EXPANDED);
+				break;
+			case 4:
+				if (.payment_switch)
+					ExpandedUnlockCostume(6);
+				ChangeAppr(roclass(eaclass()&EAJ_UPPERMASK|EAJ_BABY),.@TYPE_SETLOOK_BABY_EXPANDED);
+				break;
+			case 5:
+				ChangeAppr(0,.@TYPE_SETLOOK);
+				break;
+
+	}
+ }else{
+	setarray .@costume_unlock,Jobis_1stExpanded,Jobis_1stExpandedBaby,Jobis_2ndExpanded,Jobis_2ndExpandedBaby,Jobis_jRO_Expanded,Jobis_jROBaby_Expanded,1;
+	setarray .@menuselect$,	eaclass()&EAJ_UPPERMASK,eaclass()&EAJ_UPPERMASK|EAJ_BABY,
+				eaclass()|EAJL_THIRD,eaclass()|EAJL_THIRD|EAJ_BABY;
+
+	for (.@i = 0; .@i < getarraysize(.@costume_unlock); .@i++){
+		if (!(.payment_switch)){
+			set.@costume_locktext$[.@i],"^000000 > ";
+		}else{
+			if(.@costume_unlock[.@i]){set.@costume_locktext$[.@i],"^000000 > ";}
+			else{set.@costume_locktext$[.@i],"^000000 > [^ff0000LOCKED^000000] ";}
+		}
+	}
+	for (.@i = 0; .@i < getarraysize(.@menuselect$); .@i++){
+		if (Class == roclass(atoi(.@menuselect$[.@i]))){
+			set .@menulist$[.@i],"^000000 > "+JobNameColors(.@i,1)+jobname(roclass(atoi(.@menuselect$[.@i])));
+		}else{
+			set .@menulist$[.@i],.@costume_locktext$[.@i]+JobNameColors(.@i,1)+jobname(roclass(atoi(.@menuselect$[.@i])));
+		}
+	}
+	set .@menulist$[4],HasjROCostume() ? .@costume_locktext$[4]+.ExpandedjROColor$+ExpandedjROJobNames(roclass(eaclass()&EAJ_UPPERMASK))+"^000000" : "";
+	set .@menulist$[5],HasjROCostume() ? .@costume_locktext$[5]+.ExpandedjROBabyColor$+"Baby "+ExpandedjROJobNames(roclass(eaclass()&EAJ_UPPERMASK))+"^000000" : "";
+	set .@menulist$[6], .@costume_locktext$[6]+.RevertJobColor$+"Revert back to original^000000";
+	for (.@i = 0; .@i < getarraysize(.@menulist$); .@i++)
+		.@menu$ = .@menu$ + .@menulist$[.@i] + ":";
+	.@i = select(.@menu$);
+	switch(.@i) {
+			case 1:
+				if (Class != roclass(atoi(.@menuselect$[.@i-1])) && .payment_switch)
+					ExpandedUnlockCostume(.@i);
+				ChangeAppr(roclass(eaclass()&EAJ_UPPERMASK),.@TYPE_CHANGEBASE);
+				break;
+			case 2:
+				if (Class != roclass(atoi(.@menuselect$[.@i-1])) && .payment_switch)
+					ExpandedUnlockCostume(.@i);
+				ChangeAppr(roclass(eaclass()&EAJ_UPPERMASK|EAJ_BABY),.@TYPE_CHANGEBASE);
+				break;
+			case 3:
+				if (Class != roclass(atoi(.@menuselect$[.@i-1])) && .payment_switch)
+					ExpandedUnlockCostume(.@i);
+				ChangeAppr(roclass(eaclass()|EAJL_THIRD),.@TYPE_CHANGEBASE);
+				break;
+			case 4:
+				if (Class != roclass(atoi(.@menuselect$[.@i-1])) && .payment_switch)
+					ExpandedUnlockCostume(.@i);
+				ChangeAppr(roclass(eaclass()|EAJL_THIRD|EAJ_BABY),.@TYPE_CHANGEBASE);
+				break;
+			case 5:
+				if (.payment_switch)
+					ExpandedUnlockCostume(.@i);
+				ChangeAppr(Class,.@TYPE_SETLOOK_EXPANDED);
+				break;
+			case 6:
+				if (.payment_switch)
+					ExpandedUnlockCostume(.@i);
+				ChangeAppr(roclass(eaclass()&EAJ_UPPERMASK|EAJ_BABY),.@TYPE_SETLOOK_BABY_EXPANDED);
+				break;
+			case 7:
+				ChangeAppr(0,.@TYPE_SETLOOK);
+				break;
+
+	}
+ }
+}else{
+	//setarray .@costume_unlock,Jobis_2nd,Jobis_2ndBaby,Jobis_2ndTrans,Jobis_2ndTransBaby,Jobis_3rd,Jobis_3rdBaby,Jobis_jRO,Jobis_jROBaby,Jobis_4th,Jobis_4thBaby,1;
+        setarray .@costume_unlock,Jobis_2nd,Jobis_2ndBaby,Jobis_2ndTrans,Jobis_3rd,Jobis_3rdBaby,Jobis_jRO,Jobis_jROBaby,Jobis_4th,Jobis_4thBaby,1;
+	setarray .@menuselect$,	eaclass()&EAJ_UPPERMASK,eaclass()&EAJ_UPPERMASK|EAJ_BABY,
+				eaclass()&EAJ_UPPERMASK|EAJL_UPPER,eaclass()&EAJ_UPPERMASK|EAJL_UPPER,eaclass()|EAJL_THIRD,eaclass()|EAJL_THIRD|EAJ_BABY;
+
+	for (.@i = 0; .@i < getarraysize(.@costume_unlock); .@i++){
+		if (!(.payment_switch)){
+			set.@costume_locktext$[.@i],"^000000 > ";
+		}else{
+			if(.@costume_unlock[.@i]){set.@costume_locktext$[.@i],"^000000 > ";}
+			else{set.@costume_locktext$[.@i],"^000000 > [^ff0000LOCKED^000000] ";}
+		}
+	}
+	for (.@i = 0; .@i < getarraysize(.@menuselect$); .@i++){
+		if (Class == roclass(atoi(.@menuselect$[.@i]))){
+			set .@menulist$[.@i],"^000000 > "+JobNameColors(.@i,2)+jobname(roclass(atoi(.@menuselect$[.@i])));
+		}else{
+			set .@menulist$[.@i],.@costume_locktext$[.@i]+JobNameColors(.@i,2)+jobname(roclass(atoi(.@menuselect$[.@i])));
+		}
+		if (eaclass()&EAJL_UPPER && roclass(eaclass()|EAJL_THIRD) < 4073)
+			set .@menulist$[5],.@costume_locktext$[5]+JobNameColors(5,2)+jobname(roclass(eaclass()|EAJL_THIRD)+36);
+		else if (eaclass()&EAJL_UPPER && roclass(eaclass()|EAJL_THIRD) > 4072)
+			set .@menulist$[5],.@costume_locktext$[5]+JobNameColors(5,2)+jobname(roclass(eaclass()|EAJL_THIRD)+29);
+	}
+	set .@menulist$[3],.@costume_locktext$[3]+JobNameColors(3,2)+"Baby "+jobname(roclass(eaclass()&EAJ_UPPERMASK|EAJL_UPPER));
+	set .@menulist$[6],HasjROCostume() ? .@costume_locktext$[6]+.jROColor$+"jRO costume" : "";
+	set .@menulist$[7],HasjROCostume() ? .@costume_locktext$[7]+.jROBabyColor$+"Baby jRO costume" : "";
+	set .@menulist$[8],Has4thJobCostume() ? .@costume_locktext$[8]+.4thJobColor$+4thJobNames(roclass(eaclass()&EAJ_UPPERMASK)) : "";
+	set .@menulist$[9],Has4thJobCostume() ? .@costume_locktext$[9]+.4thJobBabyColor$+"Baby "+4thJobNames(roclass(eaclass()&EAJ_UPPERMASK)) : "";
+	set .@menulist$[10], .@costume_locktext$[10]+.RevertJobColor$+"Revert back to original^000000";
+	for (.@i = 0; .@i < getarraysize(.@menulist$); .@i++)
+		.@menu$ = .@menu$ + .@menulist$[.@i] + ":";
+	.@i = select(.@menu$);
+	switch(.@i) {
+			case 1:
+				if (Class != roclass(atoi(.@menuselect$[.@i-1])) && .payment_switch)
+					UnlockCostume(.@i);
+				ChangeAppr(roclass(eaclass()&EAJ_UPPERMASK),.@TYPE_CHANGEBASE);
+				break;
+			case 2:
+				if (Class != roclass(atoi(.@menuselect$[.@i-1])) && .payment_switch)
+					UnlockCostume(.@i);
+				ChangeAppr(roclass(eaclass()&EAJ_UPPERMASK|EAJ_BABY),.@TYPE_CHANGEBASE);
+				break;
+			case 3:
+				if (Class != roclass(atoi(.@menuselect$[.@i-1])) && .payment_switch)
+					UnlockCostume(.@i);
+				ChangeAppr(roclass(eaclass()&EAJ_UPPERMASK|EAJL_UPPER),.@TYPE_CHANGEBASE);
+				break;
+			case 4:
+				if (.payment_switch)
+					UnlockCostume(.@i);
+				if (eaclass()&EAJL_UPPER && roclass(eaclass()|EAJL_THIRD) < 4073)
+					ChangeAppr(roclass(eaclass()|EAJL_THIRD)+36,.@TYPE_SETLOOK_BABY_TRANS);
+				else if (eaclass()&EAJL_UPPER && roclass(eaclass()|EAJL_THIRD) > 4072)
+					ChangeAppr(roclass(eaclass()|EAJL_THIRD)+29,.@TYPE_SETLOOK_BABY_TRANS);
+				else
+					ChangeAppr(roclass(eaclass()|EAJL_THIRD|EAJ_BABY),.@TYPE_SETLOOK_BABY_TRANS);
+				break;
+			case 5:
+				if (Class != roclass(atoi(.@menuselect$[.@i-1])) && .payment_switch)
+					UnlockCostume(.@i);
+				ChangeAppr(roclass(eaclass()|EAJL_THIRD),.@TYPE_CHANGEBASE);
+				break;
+			case 6:
+				if (Class != roclass(atoi(.@menuselect$[.@i-1])) && .payment_switch)
+					UnlockCostume(.@i);
+				if (eaclass()&EAJL_UPPER && roclass(eaclass()|EAJL_THIRD) < 4073)
+					ChangeAppr(roclass(eaclass()|EAJL_THIRD)+36,.@TYPE_CHANGEBASE);
+				else if (eaclass()&EAJL_UPPER && roclass(eaclass()|EAJL_THIRD) > 4072)
+					ChangeAppr(roclass(eaclass()|EAJL_THIRD)+29,.@TYPE_CHANGEBASE);
+				else
+					ChangeAppr(roclass(eaclass()|EAJL_THIRD|EAJ_BABY),.@TYPE_CHANGEBASE);
+				break;
+			case 7:
+				if (.payment_switch)
+					UnlockCostume(.@i);
+				ChangeAppr(1,.@TYPE_SETLOOK);
+				break;
+			case 8:
+				if (.payment_switch)
+					UnlockCostume(.@i);
+				if (eaclass()&EAJL_UPPER && roclass(eaclass()|EAJL_THIRD) < 4073)
+					ChangeAppr(roclass(eaclass()|EAJL_THIRD)+36,.@TYPE_SETLOOK_BABY);
+				else if (eaclass()&EAJL_UPPER && roclass(eaclass()|EAJL_THIRD) > 4072)
+					ChangeAppr(roclass(eaclass()|EAJL_THIRD)+29,.@TYPE_SETLOOK_BABY);
+				else
+					ChangeAppr(roclass(eaclass()|EAJL_THIRD|EAJ_BABY),.@TYPE_SETLOOK_BABY);
+				break;
+			case 9:
+				if (.payment_switch)
+					UnlockCostume(.@i);
+				ChangeAppr(2,.@TYPE_SETLOOK);
+				break;
+			case 10:
+				if (.payment_switch)
+					UnlockCostume(.@i);
+				if (eaclass()&EAJL_UPPER && roclass(eaclass()|EAJL_THIRD) < 4073)
+					ChangeAppr(roclass(eaclass()|EAJL_THIRD)+36,.@TYPE_SETLOOK_BABY_4TH);
+				else if (eaclass()&EAJL_UPPER && roclass(eaclass()|EAJL_THIRD) > 4072)
+					ChangeAppr(roclass(eaclass()|EAJL_THIRD)+29,.@TYPE_SETLOOK_BABY_4TH);
+				else
+					ChangeAppr(roclass(eaclass()|EAJL_THIRD|EAJ_BABY),.@TYPE_SETLOOK_BABY_4TH);
+				break;
+			case 11:
+				ChangeAppr(0,.@TYPE_SETLOOK);
+				break;
+
+	}
+}
+	close;
+		
+OnPCLoginEvent:
+	if(baselook && .costume_perma){
+		changebase baselook;
+	}
+	if(changebody && .costume_perma && !(eaclass()&EAJL_THIRD)){
+		if ((baselook == roclass(eaclass()|EAJL_THIRD)+36) || (baselook == roclass(eaclass()|EAJL_THIRD)+29) || (baselook == roclass(eaclass()|EAJL_THIRD|EAJ_BABY)))
+			changebase baselook;
+		else
+			changebase roclass(eaclass()|EAJL_THIRD);
+		//setlook LOOK_CLOTHES_COLOR,0;
+		setlook LOOK_BODY2,changebody;
+		//atcommand "@bodystyle "+changebody;
+		baselook = 0;
+	}
+	end;
+OnPCLogoutEvent:
+	if (!(eaclass()&EAJL_THIRD) && changebody){
+		setlook LOOK_BODY2,0;
+	}
+	end;
+OnInit:
+// -----------------------------------------------------------
+//  CONFIGURATIONS
+// -----------------------------------------------------------
+
+	.n$ = "^000000[ ^5400ffJob Costumes^000000 ]";		// NPC Name
+
+// Expanded Class Requirements
+	setarray .Job_1stExpanded_req,909,1;			// First Expanded Job 	     -  Required Item ID to unlock (ItemID,Quantity)
+	setarray .Job_1stExpandedBaby_req,909,2;		// Baby First Expanded Job   -  Required Item ID to unlock (ItemID,Quantity)
+	setarray .Job_2ndExpanded_req,909,3;			// Second Expanded Job 	     -  Required Item ID to unlock (ItemID,Quantity)
+	setarray .Job_2ndExpandedBaby_req,909,4;		// Baby Second Expanded Job  -	Required Item ID to unlock (ItemID,Quantity)
+	setarray .Job_jRO_Expanded_req,909,5;			// jRO Expanded Job  	     -	Required Item ID to unlock (ItemID,Quantity)
+	setarray .Job_jROBaby_Expanded_req,909,6;		// Baby jRO Expanded Job     -	Required Item ID to unlock (ItemID,Quantity)
+
+// 2nd Job & 3rd Job Requirements
+	setarray .Job_2nd_req,909,1;				// Second Job 		     -  Required Item ID to unlock (ItemID,Quantity)
+	setarray .Job_2ndBaby_req,909,2;			// Baby Second Job 	     -  Required Item ID to unlock (ItemID,Quantity)
+	setarray .Job_2ndTrans_req,909,3;			// Second Job Transcendant   -  Required Item ID to unlock (ItemID,Quantity)
+	setarray .Job_2ndTransBaby_req,909,3;			// Baby Second Job Trans     -  Required Item ID to unlock (ItemID,Quantity)
+	setarray .Job_3rd_req,909,4;				// Third Job 		     -  Required Item ID to unlock (ItemID,Quantity)
+	setarray .Job_3rdBaby_req,909,5;			// Baby Third Job 	     -  Required Item ID to unlock (ItemID,Quantity)
+	setarray .Job_jRO_req,909,6;				// jRO 			     -  Required Item ID to unlock (ItemID,Quantity)
+	setarray .Job_jROBaby_req,909,7;			// Baby jRO 		     -  Required Item ID to unlock (ItemID,Quantity)
+	setarray .Job_4th_req,909,8;				// Fourth Job 		     -  Required Item ID to unlock (ItemID,Quantity)
+	setarray .Job_4thBaby_req,909,8;			// Baby Fourth Job 	     -  Required Item ID to unlock (ItemID,Quantity)
+
+// Level Requirements
+	set .Req_BaseLevel,99;					// Required Base level
+	set .Req_JobLevel,70;					// Required Job level
+	set .Req_JobLevel_Expanded,50;				// Required Job level for Expanded Class (Super Nov., Ninja, Gunslinger, Soul Linker, Star Glad.)
+
+// Switches
+	set .reset_cloth_color,0;				// Reset Cloth Color when changing job costume ( 0 - off / 1 - on )
+	set .Job_4th_switch,0;					// Fourth Job Switch ( 0 - off / 1 - on )
+	set .costume_perma,1;					// Costume Permanent ( 0 - off / 1 - on )
+	set .payment_switch,1;					// Costume Payment Switch ( 0 - off / 1 - on )
+
+// Color Menu - Expanded Class
+	set .1stExpandedColor$,"^000000";			// Menu color for First Expanded Job
+	set .1stExpandedBabyColor$,"^000000";			// Menu color for Baby First Expanded Job
+	set .2ndExpandedColor$,"^000000";			// Menu color for Second Expanded Job
+	set .2ndExpandedBabyColor$,"^000000";			// Menu color for Baby Second Expanded Job
+	set .ExpandedjROColor$, "^0000ff";			// Menu color for Expanded jRO 
+	set .ExpandedjROBabyColor$, "^0000ff";			// Menu color for Expanded Baby jRO
+
+// Color Menu - 2nd Job & 3rd Job
+	set .2ndColor$,"^000000";				// Menu color for 2nd Job
+	set .2ndBabyColor$,"^000000";				// Menu color for Baby Second Job
+	set .2ndTransColor$,"^0000ff";				// Menu color for Second Job Transcendant
+	set .2ndTransBabyColor$,"^0000ff";			// Menu color for Baby Second Job Trans
+	set .3rdColor$,"^0000ff";				// Menu color for Third Job
+	set .3rdBabyColor$,"^0000ff";				// Menu color for Baby Third Job
+	set .jROColor$, "^0000ff";				// Menu color for jRO 
+	set .jROBabyColor$, "^0000ff";				// Menu color for Baby jRO
+	set .4thJobColor$, "^0000ff";				// Menu color for 4th Job
+	set .4thJobBabyColor$, "^0000ff";			// Menu color for Baby 4th Job
+	set .RevertJobColor$, "^6a329f";			// Menu color for Revert Job Costume
+}
